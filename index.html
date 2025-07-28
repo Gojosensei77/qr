@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeonQR | Advanced QR Generator</title>
+    <meta name="description" content="Generate QR codes for websites, contacts, payments and more">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        :root {
+            --neon-blue: #00f2fe;
+            --neon-purple: #4facfe;
+            --jet-black: #0f0f13;
+            --dark-gray: #1a1a23;
+            --pure-white: #ffffff;
+            --glass-white: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hiA.woff2') format('woff2');
+        }
+
+        body {
+            background-color: var(--jet-black);
+            color: var(--pure-white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(79, 172, 254, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(0, 242, 254, 0.15) 0%, transparent 50%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            flex: 1;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            font-size: 1.25rem;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo-icon {
+            font-size: 1.5rem;
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .main {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .glass-card {
+            background: var(--glass-white);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.2),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1.3;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            padding: 0.6rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: var(--jet-black);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--pure-white);
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 0 3px rgba(0, 242, 254, 0.2);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.9rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            color: var(--jet-black);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--glass-highlight);
+            color: var(--pure-white);
+            border: 1px solid var(--glass-border);
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .qr-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 1.5rem;
+        }
+
+        .qr-code-wrapper {
+            width: 100%;
+            max-width: 250px;
+            aspect-ratio: 1/1;
+            background: var(--pure-white);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #qr-code {
+            width: 100%;
+            height: 100%;
+            padding: 1.25rem;
+        }
+
+        .download-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        .color-options {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-option {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .color-option.selected {
+            border-color: var(--pure-white);
+            transform: scale(1.1);
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            margin-top: 2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.75rem;
+            }
+            
+            .glass-card {
+                padding: 1.25rem;
+            }
+            
+            .tab {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .qr-code-wrapper {
+                max-width: 220px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-qrcode logo-icon"></i>
+                <span>NeonQR</span>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="glass-card">
+                <h1>Advanced QR Generator</h1>
+                <p class="subtitle">Create QR codes for websites, contacts, payments and more</p>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="website">Website</div>
+                    <div class="tab" data-tab="email">Email</div>
+                    <div class="tab" data-tab="phone">Phone</div>
+                    <div class="tab" data-tab="sms">SMS</div>
+                    <div class="tab" data-tab="whatsapp">WhatsApp</div>
+                    <div class="tab" data-tab="wifi">Wi-Fi</div>
+                    <div class="tab" data-tab="bitcoin">Bitcoin</div>
+                </div>
+
+                <!-- Website Tab -->
+                <div class="tab-content active" id="website-tab">
+                    <div class="form-group">
+                        <label for="website-url">Website URL</label>
+                        <input type="url" id="website-url" placeholder="https://example.com">
+                    </div>
+                </div>
+
+                <!-- Email Tab -->
+                <div class="tab-content" id="email-tab">
+                    <div class="form-group">
+                        <label for="email-address">Email Address</label>
+                        <input type="email" id="email-address" placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="email-subject">Subject (Optional)</label>
+                        <input type="text" id="email-subject" placeholder="Hello!">
+                    </div>
+                    <div class="form-group">
+                        <label for="email-body">Message (Optional)</label>
+                        <textarea id="email-body" placeholder="Your message here..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Phone Tab -->
+                <div class="tab-content" id="phone-tab">
+                    <div class="form-group">
+                        <label for="phone-number">Phone Number</label>
+                        <input type="tel" id="phone-number" placeholder="+1234567890">
+                    </div>
+                </div>
+
+                <!-- SMS Tab -->
+                <div class="tab-content" id="sms-tab">
+                    <div class="form-group">
+                        <label for="sms-number">Phone Number</label>
+                        <input type="tel" id="sms-number" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="sms-message">Message</label>
+                        <textarea id="sms-message" placeholder="Your message here..."></textarea>
+                    </div>
+                </div>
+
+                <!-- WhatsApp Tab -->
+                <div class="tab-content" id="whatsapp-tab">
+                    <div class="form-group">
+                        <label for="whatsapp-number">Phone Number</label>
+                        <input type="tel" id="whatsapp-number" placeholder="+1234567890">
+                    </div>
+                    <div class="form-group">
+                        <label for="whatsapp-message">Message (Optional)</label>
+                        <textarea id="whatsapp-message" placeholder="Your message here..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Wi-Fi Tab -->
+                <div class="tab-content" id="wifi-tab">
+                    <div class="form-group">
+                        <label for="wifi-ssid">Network Name (SSID)</label>
+                        <input type="text" id="wifi-ssid" placeholder="MyWiFiNetwork">
+                    </div>
+                    <div class="form-group">
+                        <label for="wifi-password">Password</label>
+                        <input type="text" id="wifi-password" placeholder="Network password">
+                    </div>
+                    <div class="form-group">
+                        <label for="wifi-encryption">Encryption</label>
+                        <select id="wifi-encryption">
+                            <option value="WPA">WPA/WPA2</option>
+                            <option value="WEP">WEP</option>
+                            <option value="">None (Open Network)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bitcoin Tab -->
+                <div class="tab-content" id="bitcoin-tab">
+                    <div class="form-group">
+                        <label for="bitcoin-address">Bitcoin Address</div>
+                        <input type="text" id="bitcoin-address" placeholder="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa">
+                    </div>
+                    <div class="form-group">
+                        <label for="bitcoin-amount">Amount (BTC, Optional)</label>
+                        <input type="number" id="bitcoin-amount" placeholder="0.01" step="0.00000001">
+                    </div>
+                </div>
+
+                <div class="color-options">
+                    <div class="color-option selected" style="background: #000000;" data-color="#000000"></div>
+                    <div class="color-option" style="background: var(--neon-blue);" data-color="#00f2fe"></div>
+                    <div class="color-option" style="background: #4facfe;" data-color="#4facfe"></div>
+                    <div class="color-option" style="background: #8a2be2;" data-color="#8a2be2"></div>
+                    <div class="color-option" style="background: #ff1493;" data-color="#ff1493"></div>
+                </div>
+
+                <button id="generate-btn" class="btn btn-primary">
+                    <i class="fas fa-bolt"></i> Generate QR Code
+                </button>
+            </div>
+            
+            <div class="glass-card qr-container">
+                <div class="qr-code-wrapper">
+                    <div class="qr-placeholder">
+                        <i class="fas fa-qrcode" style="font-size: 3rem; color: rgba(255,255,255,0.1); margin-bottom: 1rem;"></i>
+                        <p>Your QR code will appear here</p>
+                    </div>
+                    <canvas id="qr-code" style="display: none;"></canvas>
+                </div>
+                
+                <div class="download-options">
+                    <button id="download-png" class="btn btn-secondary" disabled>
+                        <i class="fas fa-download"></i> PNG
+                    </button>
+                    <button id="download-svg" class="btn btn-secondary" disabled>
+                        <i class="fas fa-download"></i> SVG
+                    </button>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>© <span id="current-year"></span> NeonQR. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current year
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+
+            // DOM elements
+            const generateBtn = document.getElementById('generate-btn');
+            const qrCodeCanvas = document.getElementById('qr-code');
+            const qrPlaceholder = document.querySelector('.qr-placeholder');
+            const downloadPngBtn = document.getElementById('download-png');
+            const downloadSvgBtn = document.getElementById('download-svg');
+            const colorOptions = document.querySelectorAll('.color-option');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+
+            // Color selection
+            colorOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelector('.color-option.selected').classList.remove('selected');
+                    option.classList.add('selected');
+                });
+            });
+
+            // Generate QR Code
+            generateBtn.addEventListener('click', generateQRCode);
+
+            function generateQRCode() {
+                const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+                let qrData = '';
+                
+                switch(activeTab) {
+                    case 'website':
+                        const url = document.getElementById('website-url').value.trim();
+                        if (!url) {
+                            alert('Please enter a valid URL');
+                            return;
+                        }
+                        qrData = url;
+                        break;
+                    
+                    case 'email':
+                        const email = document.getElementById('email-address').value.trim();
+                        const subject = document.getElementById('email-subject').value.trim();
+                        const body = document.getElementById('email-body').value.trim();
+                        
+                        if (!email) {
+                            alert('Please enter an email address');
+                            return;
+                        }
+                        
+                        qrData = `mailto:${email}`;
+                        if (subject) qrData += `?subject=${encodeURIComponent(subject)}`;
+                        if (body) qrData += `${subject ? '&' : '?'}body=${encodeURIComponent(body)}`;
+                        break;
+                    
+                    case 'phone':
+                        const phone = document.getElementById('phone-number').value.trim();
+                        
+                        if (!phone) {
+                            alert('Please enter a phone number');
+                            return;
+                        }
+                        
+                        qrData = `tel:${phone}`;
+                        break;
+                    
+                    case 'sms':
+                        const smsNumber = document.getElementById('sms-number').value.trim();
+                        const smsMessage = document.getElementById('sms-message').value.trim();
+                        
+                        if (!smsNumber) {
+                            alert('Please enter a phone number');
+                            return;
+                        }
+                        
+                        qrData = `smsto:${smsNumber}`;
+                        if (smsMessage) qrData += `:${smsMessage}`;
+                        break;
+                    
+                    case 'whatsapp':
+                        const whatsappNumber = document.getElementById('whatsapp-number').value.trim();
+                        const whatsappMessage = document.getElementById('whatsapp-message').value.trim();
+                        
+                        if (!whatsappNumber) {
+                            alert('Please enter a phone number');
+                            return;
+                        }
+                        
+                        qrData = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
+                        if (whatsappMessage) qrData += `?text=${encodeURIComponent(whatsappMessage)}`;
+                        break;
+                    
+                    case 'wifi':
+                        const ssid = document.getElementById('wifi-ssid').value.trim();
+                        const wifiPass = document.getElementById('wifi-password').value.trim();
+                        const encryption = document.getElementById('wifi-encryption').value;
+                        
+                        if (!ssid) {
+                            alert('Please enter a network name');
+                            return;
+                        }
+                        
+                        qrData = `WIFI:T:${encryption};S:${ssid};`;
+                        if (wifiPass) qrData += `P:${wifiPass};`;
+                        qrData += `;`;
+                        break;
+                    
+                    case 'bitcoin':
+                        const btcAddress = document.getElementById('bitcoin-address').value.trim();
+                        const btcAmount = document.getElementById('bitcoin-amount').value.trim();
+                        
+                        if (!btcAddress) {
+                            alert('Please enter a Bitcoin address');
+                            return;
+                        }
+                        
+                        qrData = `bitcoin:${btcAddress}`;
+                        if (btcAmount) qrData += `?amount=${btcAmount}`;
+                        break;
+                }
+
+                const selectedColor = document.querySelector('.color-option.selected').getAttribute('data-color');
+                
+                // Set canvas size (adjust based on screen size)
+                const canvasSize = window.innerWidth < 768 ? 220 : 250;
+                qrCodeCanvas.width = canvasSize;
+                qrCodeCanvas.height = canvasSize;
+
+                // Generate QR code
+                QRCode.toCanvas(qrCodeCanvas, qrData, {
+                    width: canvasSize,
+                    color: {
+                        dark: selectedColor,
+                        light: '#ffffff'
+                    },
+                    margin: 1
+                }, function(error) {
+                    if (error) {
+                        console.error(error);
+                        alert('Error generating QR code');
+                        return;
+                    }
+
+                    // Show QR code
+                    qrPlaceholder.style.display = 'none';
+                    qrCodeCanvas.style.display = 'block';
+                    
+                    // Enable download buttons
+                    downloadPngBtn.disabled = false;
+                    downloadSvgBtn.disabled = false;
+                });
+            }
+
+            // Download functionality
+            downloadPngBtn.addEventListener('click', function() {
+                const link = document.createElement('a');
+                link.download = 'neonqr-code.png';
+                link.href = qrCodeCanvas.toDataURL('image/png');
+                link.click();
+            });
+
+            downloadSvgBtn.addEventListener('click', async function() {
+                const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+                const qrData = getQRDataForActiveTab(activeTab);
+                const selectedColor = document.querySelector('.color-option.selected').getAttribute('data-color');
+                
+                if (!qrData) return;
+
+                try {
+                    const svgData = await QRCode.toString(qrData, {
+                        type: 'svg',
+                        color: {
+                            dark: selectedColor,
+                            light: '#ffffff'
+                        },
+                        margin: 1
+                    });
+
+                    const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = 'neonqr-code.svg';
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                } catch (error) {
+                    console.error(error);
+                    alert('Error generating SVG');
+                }
+            });
+
+            function getQRDataForActiveTab(activeTab) {
+                switch(activeTab) {
+                    case 'website':
+                        return document.getElementById('website-url').value.trim();
+                    case 'email':
+                        const email = document.getElementById('email-address').value.trim();
+                        const subject = document.getElementById('email-subject').value.trim();
+                        const body = document.getElementById('email-body').value.trim();
+                        
+                        let emailData = `mailto:${email}`;
+                        if (subject) emailData += `?subject=${encodeURIComponent(subject)}`;
+                        if (body) emailData += `${subject ? '&' : '?'}body=${encodeURIComponent(body)}`;
+                        return emailData;
+                    case 'phone':
+                        return `tel:${document.getElementById('phone-number').value.trim()}`;
+                    case 'sms':
+                        const smsNumber = document.getElementById('sms-number').value.trim();
+                        const smsMessage = document.getElementById('sms-message').value.trim();
+                        
+                        let smsData = `smsto:${smsNumber}`;
+                        if (smsMessage) smsData += `:${smsMessage}`;
+                        return smsData;
+                    case 'whatsapp':
+                        const whatsappNumber = document.getElementById('whatsapp-number').value.trim();
+                        const whatsappMessage = document.getElementById('whatsapp-message').value.trim();
+                        
+                        let whatsappData = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
+                        if (whatsappMessage) whatsappData += `?text=${encodeURIComponent(whatsappMessage)}`;
+                        return whatsappData;
+                    case 'wifi':
+                        const ssid = document.getElementById('wifi-ssid').value.trim();
+                        const wifiPass = document.getElementById('wifi-password').value.trim();
+                        const encryption = document.getElementById('wifi-encryption').value;
+                        
+                        let wifiData = `WIFI:T:${encryption};S:${ssid};`;
+                        if (wifiPass) wifiData += `P:${wifiPass};`;
+                        wifiData += `;`;
+                        return wifiData;
+                    case 'bitcoin':
+                        const btcAddress = document.getElementById('bitcoin-address').value.trim();
+                        const btcAmount = document.getElementById('bitcoin-amount').value.trim();
+                        
+                        let btcData = `bitcoin:${btcAddress}`;
+                        if (btcAmount) btcData += `?amount=${btcAmount}`;
+                        return btcData;
+                    default:
+                        return '';
+                }
+            }
+
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (qrCodeCanvas.style.display !== 'none') {
+                    generateQRCode();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
